@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EnemyControls : MonoBehaviour {
 
@@ -15,16 +16,39 @@ public class EnemyControls : MonoBehaviour {
 	private bool _isRight;
 	private bool _hitWall;
 
+	// Health
+	public float _maxHealth = 100;
+	private float _enemyHealth;
+	public Image _healthBar;
+
 	// // Patrol Action
 	// public float _startWaitTime;
 	// public Transform[] _waypoints;
 	// private float _standbyTime;
 	// private int _randomSpot;
+
+		void Start() {
+		_enemyHealth = _maxHealth;
+	}
 	
 	// Update is called once per frame
 	void Update () {
 		SurfaceDetection();
 		// EnemyPatrol();
+	}
+
+	public void TakeDamage (float _amount) {
+		_enemyHealth -= _amount;
+
+		_healthBar.fillAmount = _enemyHealth / _maxHealth;
+
+		if(_enemyHealth <= 0) {
+			Die();
+		}
+	}
+
+	void Die() {
+		this.gameObject.SetActive(false);
 	}
 
 	void SurfaceDetection() {

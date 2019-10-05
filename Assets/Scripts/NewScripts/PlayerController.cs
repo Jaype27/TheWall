@@ -22,6 +22,9 @@ public class PlayerController : MonoBehaviour {
 
 	ObjectPooler _objectPooler;
 	public Transform _firePoint;
+	public float _fireRate;
+	private float _lastTimeFired;
+
 
 	// Use this for initialization
 	void Start () {
@@ -37,9 +40,12 @@ public class PlayerController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
-		_isGrounded = Physics2D.OverlapCircle(_groundCheck.position, _groundCheckradius, _groundMask);
+		FlipCharacter();
+		JumpCharacter();
+		Shooting();
+	}
 
+	void FlipCharacter() {
 		if(_moveInput > 0) {
 			transform.eulerAngles = new Vector3(0, 0, 0);
 			_anim.SetFloat("Speed", _moveSpeed);
@@ -52,7 +58,11 @@ public class PlayerController : MonoBehaviour {
 			_anim.SetFloat("Speed", 0);
 			// anim idle
 		}
+	}
 
+	void JumpCharacter() {
+		_isGrounded = Physics2D.OverlapCircle(_groundCheck.position, _groundCheckradius, _groundMask);
+	
 		if(_isGrounded == true && Input.GetKeyDown(KeyCode.Space)) {
 			_isJumping = true;
 			_jumpTimeCounter = _jumpTime;
@@ -71,9 +81,16 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetKeyUp(KeyCode.Space)) {
 			_isJumping = false;
 		}
+	}
 
+	void Shooting() {
+		
 		if(Input.GetMouseButtonDown(0)) {
-			_objectPooler.SpawnFromPool("Laser", _firePoint.position, _firePoint.rotation);
+			if(Time.time -_lastTimeFired > 1 / _fireRate) {
+				_lastTimeFired = Time.time;
+				_objectPooler.SpawnFromPool("Laser", _firePoint.position, _firePoint.rotation);
+			}
+			
 		}
 	}
 }
