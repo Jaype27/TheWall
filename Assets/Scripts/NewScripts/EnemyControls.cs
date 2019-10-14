@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class EnemyControls : MonoBehaviour {
 
 	public float _enemySpeed;
+	public float _enemyInflictDamage;
 
 	// Ground and Wall Detection
 	public Transform _groundSpot;
@@ -27,7 +28,7 @@ public class EnemyControls : MonoBehaviour {
 	// private float _standbyTime;
 	// private int _randomSpot;
 
-		void Start() {
+	void Start() {
 		_enemyHealth = _maxHealth;
 	}
 	
@@ -65,6 +66,22 @@ public class EnemyControls : MonoBehaviour {
 				transform.eulerAngles = new Vector3(0, -180, 0);
 				_isRight = true;
 			}
+		}
+	}
+
+	void OnTriggerEnter2D(Collider2D other) {
+
+		PlayerController _player = other.GetComponent<PlayerController>();
+		
+		if(other.gameObject.tag == "Player") {
+			_player.PlayerDamage(_enemyInflictDamage);
+
+			_player._knockbackCount = _player._knockbackMax;
+
+			if(other.transform.position.x < transform.position.x)
+				_player._knockfromRight = true;
+			else
+				_player._knockfromRight = false;
 		}
 	}
 

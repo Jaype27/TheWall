@@ -1,13 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
 
+	// Movement
 	public float _moveSpeed;
 	public float _jumpHeight;
 	private float _moveInput;
 
+	// Player Health
+	public float _maxPlayerHealth = 100f;
+	private float _playerHealth;
+	public Image _healthBar;
+	
 	private Rigidbody2D _rb2D;
 	private Animator _anim;
 
@@ -16,14 +23,30 @@ public class PlayerController : MonoBehaviour {
 	public LayerMask _groundMask;
 	public float _groundCheckradius;
 
+	// Pressure Jump
 	private float _jumpTimeCounter;
 	public float _jumpTime;
 	private bool _isJumping; 
 
+	// Laser Spawn Point
 	ObjectPooler _objectPooler;
 	public Transform _firePoint;
 	public float _fireRate;
 	private float _lastTimeFired;
+
+	// Invincible Frames
+	public Renderer _playerRend;
+	public Renderer _gunRend;
+	private float _flashCounter;
+	public float _flashMax = 0.1f;
+	private float _invincibleCounter;
+	public float _invincibleMax = 1.0f;
+
+	// Knockback
+	public float _knockback;
+	public float _knockbackCount;
+	public float _knockbackMax;
+	public bool _knockfromRight;
 
 
 	// Use this for initialization
@@ -31,11 +54,11 @@ public class PlayerController : MonoBehaviour {
 		_rb2D = GetComponent<Rigidbody2D>();
 		_anim = GetComponent<Animator>();
 		_objectPooler = ObjectPooler.Instance;
+		_playerHealth = _maxPlayerHealth;
 	}
 
 	void FixedUpdate() {
-		_moveInput = Input.GetAxis("Horizontal");
-		_rb2D.velocity = new Vector2(_moveInput * _moveSpeed, _rb2D.velocity.y);
+		MovePlayer();
 	}
 	
 	// Update is called once per frame
@@ -43,20 +66,24 @@ public class PlayerController : MonoBehaviour {
 		FlipCharacter();
 		JumpCharacter();
 		Shooting();
+		InvincibleFrames();
+		PlayerKnockBack();
+	}
+
+	void MovePlayer() {
+		_moveInput = Input.GetAxis("Horizontal");
+		_rb2D.velocity = new Vector2(_moveInput * _moveSpeed, _rb2D.velocity.y);
 	}
 
 	void FlipCharacter() {
 		if(_moveInput > 0) {
 			transform.eulerAngles = new Vector3(0, 0, 0);
 			_anim.SetFloat("Speed", _moveSpeed);
-			// anim moving right
 		} else if(_moveInput < 0) {
 			transform.eulerAngles = new Vector3(0, 180, 0);
 			_anim.SetFloat("Speed", _moveSpeed);
-			// anim moving left
 		} else {
 			_anim.SetFloat("Speed", 0);
-			// anim idle
 		}
 	}
 
@@ -84,13 +111,64 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Shooting() {
-		
-		if(Input.GetMouseButtonDown(0)) {
-			if(Time.time -_lastTimeFired > 1 / _fireRate) {
-				_lastTimeFired = Time.time;
-				_objectPooler.SpawnFromPool("Laser", _firePoint.position, _firePoint.rotation);
+		if( _invincibleCounter <= 0) {
+			if(Input.GetMouseButtonDown(0)) {
+				if(Time.time -_lastTimeFired > 1 / _fireRate) {
+					_lastTimeFired = Time.time;
+					_objectPooler.SpawnFromPool("Laser", _firePoint.position, _firePoint.rotation);
+				}
 			}
-			
+		}
+	}
+
+	void InvincibleFrames() {
+		if(_invincibleCounter > 0) {
+			_invincibleCounter -= Time.deltaTime;
+
+			_flashCounter -= Time.deltaTime;
+
+			if(_flashCounter <= 0) {
+				_playerRend.enabled = !_playerRend.enabled;
+				_gunRend.enabled = !_gunRend.enabled;
+
+				_flashCounter = _flashMax;
+			}
+
+			if(_invincibleCounter <= 0) {
+				_playerRend.enabled = true;
+				_gunRend.enabled = true;
+			}
+		}
+	}
+
+	public void PlayerDamage(float _amount) {
+
+		if(_invincibleCounter <= 0) {
+			_playerHealth -= _amount;
+
+			_healthBar.fillAmount = _playerHealth / _maxPlayerHealth;
+
+			_invincibleCounter = _invincibleMax;
+
+			_playerRend.enabled = false;
+			_gunRend.enabled = false;
+
+			_flashCounter = _flashMax;
+
+			if(_playerHealth <= 0) {
+				this.gameObject.SetActive(false);
+			}
+		}	
+	}
+	public void PlayerKnockBack() {
+		if(_knockbackCount <= 0) {
+			_rb2D.velocity = new Vector2(_moveInput, _rb2D.velocity.y);
+		} else {
+			if(_knockfromRight)
+				_rb2D.velocity = new Vector2(_knockback, _knockback);
+			if(!_knockfromRight)
+				_rb2D.velocity = new Vector2(_knockback, _knockback);	
+			_knockbackCount -= Time.deltaTime;
 		}
 	}
 }
