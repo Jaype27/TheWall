@@ -9,10 +9,11 @@ public class PlayerController : MonoBehaviour {
 	public float _moveSpeed;
 	public float _jumpHeight;
 	private float _moveInput;
+	public GameManager _gm;
 
 	// Player Health
 	public float _maxPlayerHealth = 100f;
-	private float _playerHealth;
+	public float _playerHealth;
 	public Image _healthBar;
 	
 	private Rigidbody2D _rb2D;
@@ -59,6 +60,7 @@ public class PlayerController : MonoBehaviour {
 
 	void FixedUpdate() {
 		MovePlayer();
+		PlayerKnockBack();
 	}
 	
 	// Update is called once per frame
@@ -67,8 +69,9 @@ public class PlayerController : MonoBehaviour {
 		JumpCharacter();
 		Shooting();
 		InvincibleFrames();
-		PlayerKnockBack();
-	}
+
+		HealthBar();
+	}	
 
 	void MovePlayer() {
 		_moveInput = Input.GetAxis("Horizontal");
@@ -146,8 +149,6 @@ public class PlayerController : MonoBehaviour {
 		if(_invincibleCounter <= 0) {
 			_playerHealth -= _amount;
 
-			_healthBar.fillAmount = _playerHealth / _maxPlayerHealth;
-
 			_invincibleCounter = _invincibleMax;
 
 			_playerRend.enabled = false;
@@ -157,18 +158,24 @@ public class PlayerController : MonoBehaviour {
 
 			if(_playerHealth <= 0) {
 				this.gameObject.SetActive(false);
+				_gm.RespawnPlayer();
 			}
-		}	
+		}
 	}
-	public void PlayerKnockBack() {
+
+	private void HealthBar() {
+		_healthBar.fillAmount = _playerHealth / _maxPlayerHealth;
+	}
+	
+	public void PlayerKnockBack() {	
 		if(_knockbackCount <= 0) {
-			_rb2D.velocity = new Vector2(_moveInput, _rb2D.velocity.y);
+			_rb2D.velocity = new Vector2(_moveInput * _moveSpeed, _rb2D.velocity.y);
 		} else {
 			if(_knockfromRight)
-				_rb2D.velocity = new Vector2(_knockback, _knockback);
+				_rb2D.velocity = new Vector2(-_knockback, _knockback);
 			if(!_knockfromRight)
 				_rb2D.velocity = new Vector2(_knockback, _knockback);	
-			_knockbackCount -= Time.deltaTime;
+				_knockbackCount -= Time.deltaTime;
 		}
 	}
 }
